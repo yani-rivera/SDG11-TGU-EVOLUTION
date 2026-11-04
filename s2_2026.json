@@ -1,0 +1,72 @@
+{
+ "bounds": [
+  -87.5003,
+  14.0005,
+  -86.9999,
+  14.1682
+ ],
+ "tiles": [
+  {
+   "file": "s2_2026_0_0.webp",
+   "coordinates": [
+    [
+     -87.5003,
+     14.168200000000004
+    ],
+    [
+     -86.9999,
+     14.168200000000004
+    ],
+    [
+     -86.9999,
+     14.000499999999999
+    ],
+    [
+     -87.5003,
+     14.000499999999999
+    ]
+   ]
+  }
+ ],
+ "source_crs": "EPSG:4326",
+ "provenance": {
+  "script": "sheet_to_globe",
+  "version": "0.4.0",
+  "python": "3.13.18",
+  "source_file": "s2_2026-02-09_true_color.tiff",
+  "source_sha256": "5226661c7b9e2c94640a5371158b50c156704ba6b50054ac531d34cdee430b61",
+  "source_size_px": [
+   2500,
+   864
+  ],
+  "config": {
+   "input": {
+    "geotiff": "s2_2026-02-09_true_color.tiff"
+   },
+   "source": {
+    "mosaic": false,
+    "sheets": [
+     "Sentinel-2 L2A true color"
+    ],
+    "origin": "Copernicus Sentinel-2 L2A via EO Browser / Sentinel Hub; contains modified Copernicus Sentinel data 2026",
+    "acquired": "2026-02-09",
+    "notes": "Dry-season scene chosen for clear sky over the valley; small clouds over the hills to the north and southeast."
+   },
+   "output": {
+    "dir": "globe",
+    "prefix": "s2_2026",
+    "format": "WEBP",
+    "quality": 82,
+    "max_tile_px": 4096
+   },
+   "collar": {
+    "white_threshold": 245,
+    "black_threshold": 5
+   },
+   "projection": {
+    "resample_rows_to_web_mercator": true
+   }
+  },
+  "created_utc": "2026-11-04T15:59:13+00:00"
+ }
+}

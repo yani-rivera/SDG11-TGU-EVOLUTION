@@ -1,0 +1,93 @@
+{
+ "bounds": [
+  -87.50029909118959,
+  14.000496502314466,
+  -86.9999798578546,
+  14.168169786802233
+ ],
+ "tiles": [
+  {
+   "file": "osm2026_0_0.webp",
+   "coordinates": [
+    [
+     -87.50029909118959,
+     14.16816978680223
+    ],
+    [
+     -87.25013947452209,
+     14.16816978680223
+    ],
+    [
+     -87.25013947452209,
+     14.000496502314462
+    ],
+    [
+     -87.50029909118959,
+     14.000496502314462
+    ]
+   ]
+  },
+  {
+   "file": "osm2026_0_1.webp",
+   "coordinates": [
+    [
+     -87.25013947452209,
+     14.16816978680223
+    ],
+    [
+     -86.9999798578546,
+     14.16816978680223
+    ],
+    [
+     -86.9999798578546,
+     14.000496502314462
+    ],
+    [
+     -87.25013947452209,
+     14.000496502314462
+    ]
+   ]
+  }
+ ],
+ "source_crs": "EPSG:4326",
+ "provenance": {
+  "script": "sheet_to_globe",
+  "version": "0.3.0",
+  "python": "3.13.18",
+  "source_file": "tgu2026.tiff",
+  "source_sha256": "1577aa6c03e1fac3a61cc5e893774d9ff9a5d5a5a36203e7e1ba39cb68f72d65",
+  "source_size_px": [
+   6000,
+   2073
+  ],
+  "config": {
+   "input": {
+    "geotiff": "tgu2026.tiff"
+   },
+   "source": {
+    "mosaic": false,
+    "sheets": [
+     "OpenTopoMap render of OpenStreetMap"
+    ],
+    "origin": "OpenTopoMap tiles (map style CC-BY-SA), OpenStreetMap data (ODbL), SRTM relief",
+    "captured": "2026-11-04",
+    "notes": "Frozen 2026 baseline exported from QGIS as a rendered image."
+   },
+   "output": {
+    "dir": "globe",
+    "prefix": "osm2026",
+    "format": "WEBP",
+    "quality": 82,
+    "max_tile_px": 4096
+   },
+   "collar": {
+    "white_threshold": 245,
+    "black_threshold": 5
+   },
+   "projection": {
+    "resample_rows_to_web_mercator": true
+   }
+  },
+  "created_utc": "2026-11-04T15:42:57+00:00"
+ }
+}
