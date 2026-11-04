@@ -1,42 +1,57 @@
-# sheet_to_globe
+# SDG11-TGU-EVOLUTION
 
-Prepares a georeferenced map sheet (an EPSG:4326 RGB GeoTIFF) as image tiles that a MapLibre globe can drape at the right coordinates. Used for the *Tegucigalpa, 1983* globe.
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23957998.svg)](https://doi.org/10.5281/zenodo.23957998)
 
-## Input
-The input is one GeoTIFF. For the Tegucigalpa globe that file is a **mosaic of two sheets** (Tegucigalpa and Lepaterique) merged in QGIS. The `[source]` section of `config.toml` lists the original sheets, and it is copied into `sheet.json`, so the provenance names both sheets, not just the merged file. To add more sheets, merge them first (Raster → Miscellaneous → Merge) and add them to `sheets`.
+Tegucigalpa, Honduras, across 43 years on an interactive globe: the **1983 topographic survey**, the **2026 OpenStreetMap map** and a **2026 Sentinel-2 satellite image**, aligned on one slider as dated baselines for SDG 11 urban research.
 
-## What it does
-1. Reads the GeoTIFF (uint8, or float 0–255 as QGIS sometimes writes) and its corner coordinates.
-2. Makes the paper collar and nodata border transparent (only white/black areas touching the edge).
-3. Resamples rows from equal-degree to Web Mercator spacing, because MapLibre stretches images linearly in Mercator.
-4. Splits the image into tiles of at most 4096 px (safe for phone GPUs) and writes WebP or PNG.
-5. Writes `sheet.json`: each tile's four corners, the bounds, and provenance (script version, source SHA-256, config, UTC time).
+Made for the **#30DayMapChallenge 2026**.
 
-## Configs (one per layer)
-| Config | Layer | Source file to place next to it | Where to get it |
+**Live globe:** https://yani-rivera.github.io/SDG11-TGU-EVOLUTION/
+
+## The baselines
+
+| Stop | Source | Date | License / credit |
 |---|---|---|---|
-| `config.toml` | 1983 survey sheets | `alltgu_rendered.tiff` | Perry-Castañeda Library Map Collection (Tegucigalpa + Lepaterique sheets), merged and georeferenced in QGIS |
-| `config_2026.toml` | 2026 map | `tgu2026.tiff` | OpenTopoMap layer in QGIS, exported as rendered image, 6000 columns, same extent |
-| `config_s2.toml` | 2026 satellite | `s2_2026-02-09_true_color.tiff` | EO Browser, Sentinel-2 L2A true color, 9 Feb 2026, clipped to `tegucigalpa_extent` |
+| 1983 survey | Tegucigalpa and Lepaterique sheets, 1:50,000 topographic series. Perry-Castañeda Library Map Collection, courtesy of the University of Texas Libraries, The University of Texas at Austin. Mosaic and georeferencing: Yanira A. Rivera | 1983 | Public domain (PCL) |
+| 2026 map | Map data © OpenStreetMap contributors, SRTM; map style © OpenTopoMap | captured 4 Nov 2026 | ODbL data, CC-BY-SA style |
+| 2026 satellite | Sentinel-2 L2A true color. Contains modified Copernicus Sentinel data 2026 | acquired 9 Feb 2026 | Copernicus free and open data |
+| Base map | Natural Earth coastlines and borders | | Public domain |
 
-Each source file's SHA-256 is recorded in the output `.json`, so you can check you have the same file.
+Each layer's `.json` file (`sheet.json`, `osm2026.json`, `s2_2026.json`) records its corner coordinates and provenance: script version, source file SHA-256, settings and creation time.
 
-## Run
+## Repository layout
+
+```
+index.html          the globe (MapLibre GL JS 5.6.0)
+*.json, *.webp      the three baselines as image tiles
+*.geojson           Natural Earth base map
+tools/              sheet_to_globe: the toolkit that rebuilds every layer
+```
+
+## Rebuilding the layers
+
+See [`tools/README.md`](tools/README.md). In short:
+
 ```
 pip install numpy scipy tifffile imagecodecs pillow
-python -m sheet_to_globe config.toml
-python -m sheet_to_globe config_2026.toml
-python -m sheet_to_globe config_s2.toml
+cd tools
+python -m sheet_to_globe config.toml        # 1983 survey
+python -m sheet_to_globe config_2026.toml   # 2026 map
+python -m sheet_to_globe config_s2.toml     # 2026 satellite
 ```
-Python 3.11+ (uses `tomllib`). Paths in `config.toml` are relative to the config file.
 
-## Export from QGIS
-Right-click the layer → Export → Save As… → GeoTIFF, CRS EPSG:4326, Columns 6000. If the result shows as a grey block in QGIS, it is a float raster; the script reads it correctly anyway.
+The source GeoTIFFs are not stored here. The tools README says where each one comes from. All downloads use the same area, `tools/tegucigalpa_extent.geojson`.
 
-## Other files
-- `make_land.js` builds the coastline, border and Honduras GeoJSON from Natural Earth (`npm i world-atlas@2.0.2 topojson-client@3.1.0`, then `node make_land.js node_modules out_dir`).
-- `globe_page_template.html` is the globe page. Replace `/*MAPLIBRE_CSS*/` with the contents of `maplibre-gl@5.6.0/dist/maplibre-gl.css`, and serve it next to the tiles, `sheet.json` and the GeoJSON files.
+## Versions
 
-## Limits
-- Assumes a north-up raster in EPSG:4326 (no rotation terms).
-- Row resampling is nearest-neighbor; over a sheet this size (about 0.17° of latitude) the shift is under one pixel.
+A new baseline is added each year and released as a new version on Zenodo, keeping the same season (early February for the satellite image, early November for the map) and the same extent, so the years stay comparable.
+
+## How to cite
+
+Rivera, Y. A. (2026). *SDG11-TGU-EVOLUTION: Reproducible toolkit for dated urban baselines of Tegucigalpa, 1983–2026*. Zenodo. https://doi.org/10.5281/zenodo.23957998
+
+## License
+
+Code (`tools/`, `index.html`): MIT. Layer images keep their sources' licenses, as listed above; the 2026 map layer is CC-BY-SA.
+
+Author: Yanira A. Rivera · ORCID [0000-0003-3309-5256](https://orcid.org/0000-0003-3309-5256)
