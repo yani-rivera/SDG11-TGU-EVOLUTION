@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>Tegucigalpa 1983 sheets extent</name>
+    <Placemark>
+      <name>Tegucigalpa 1983 sheets extent</name>
+      <Polygon>
+        <outerBoundaryIs><LinearRing><coordinates>
+          -87.5003,14.0005,0 -86.9999,14.0005,0 -86.9999,14.1682,0 -87.5003,14.1682,0 -87.5003,14.0005,0
+        </coordinates></LinearRing></outerBoundaryIs>
+      </Polygon>
+    </Placemark>
+  </Document>
+</kml>

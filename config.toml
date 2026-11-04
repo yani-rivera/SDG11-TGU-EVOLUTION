@@ -1,0 +1,26 @@
+# sheet_to_globe — settings for preparing a georeferenced map sheet for a MapLibre globe
+
+[input]
+geotiff = "alltgu_rendered.tiff"   # RGB(A) GeoTIFF in EPSG:4326 or EPSG:3857 (uint8 or float 0–255)
+
+[source]
+# the input is a mosaic: list the original sheets so they travel with the provenance record
+mosaic = true
+sheets = ["Tegucigalpa", "Lepaterique (Hoja 2758 III G)"]
+origin = "Perry-Castañeda Library Map Collection, University of Texas Libraries (public domain per PCL FAQ)"
+notes = "Two georeferenced sheets merged in QGIS into one mosaic before export; a seam is visible where they meet."
+
+[output]
+dir = "globe"
+prefix = "sheet"          # file names: <prefix>_<row>_<col>.webp and <prefix>.json
+format = "WEBP"          # WEBP or PNG (both keep transparency)
+quality = 82             # WEBP only
+max_tile_px = 4096       # largest tile side; 4096 is safe for phone GPUs
+
+[collar]
+# pixels connected to the image edge that are near-white or near-black become transparent
+white_threshold = 245    # min(R,G,B) >= this counts as white paper
+black_threshold = 5      # max(R,G,B) <= this counts as black nodata
+
+[projection]
+resample_rows_to_web_mercator = true   # MapLibre stretches images linearly in Web Mercator

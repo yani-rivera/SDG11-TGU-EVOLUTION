@@ -1,0 +1,26 @@
+# sheet_to_globe — settings for preparing a georeferenced map sheet for a MapLibre globe
+
+[input]
+geotiff = "s2_2026-02-09_true_color.tiff"   # Sentinel-2 L2A true color, 2500 x 864 px
+
+[source]
+mosaic = false
+sheets = ["Sentinel-2 L2A true color"]
+origin = "Copernicus Sentinel-2 L2A via EO Browser / Sentinel Hub; contains modified Copernicus Sentinel data 2026"
+acquired = "2026-02-09"
+notes = "Dry-season scene chosen for clear sky over the valley; small clouds over the hills to the north and southeast."
+
+[output]
+dir = "globe"
+prefix = "s2_2026"           # file names: <prefix>_<row>_<col>.webp and <prefix>.json
+format = "WEBP"          # WEBP or PNG (both keep transparency)
+quality = 82             # WEBP only
+max_tile_px = 4096       # largest tile side; 4096 is safe for phone GPUs
+
+[collar]
+# pixels connected to the image edge that are near-white or near-black become transparent
+white_threshold = 245    # min(R,G,B) >= this counts as white paper
+black_threshold = 5      # max(R,G,B) <= this counts as black nodata
+
+[projection]
+resample_rows_to_web_mercator = true   # MapLibre stretches images linearly in Web Mercator

@@ -1,0 +1,254 @@
+<title>Tegucigalpa on Paper</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&family=Spectral:wght@400;500&family=IBM+Plex+Mono:wght@400&display=swap">
+<style>/*MAPLIBRE_CSS*/</style>
+<style>
+/* Layout: one full-bleed globe on a night-blue study table; a parchment cartouche
+   top-left, an instrument tray of controls bottom-left, a coordinate readout bottom-right. */
+:root {
+  --night: #141b24;        /* the room around the globe */
+  --ocean: #9fb3a6;        /* faded sea varnish */
+  --parchment: #ead9b4;    /* land and paper */
+  --ink: #3b2a1a;          /* sepia ink */
+  --rule: #8a6a43;         /* brass rules and graticule */
+  --rouge: #9b3b2a;        /* the 1983 sheet's red ink, used once for the pin */
+  --font-display: "IM Fell English", "Iowan Old Style", Georgia, serif;
+  --font-caps: "IM Fell English SC", "IM Fell English", Georgia, serif;
+  --font-body: "Spectral", Georgia, "Times New Roman", serif;
+  --font-data: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  color-scheme: dark;
+}
+html, body { height: 100%; }
+body { background: var(--night); color: var(--parchment); font-family: var(--font-body); overflow: hidden; }
+#map { position: fixed; inset: 0; }
+.maplibregl-canvas:focus-visible { outline: 2px solid var(--rule); outline-offset: -2px; }
+
+.cartouche, .tray, .readout {
+  position: fixed; z-index: 2;
+  background: var(--parchment); color: var(--ink);
+  border: 1px solid var(--rule);
+  box-shadow: 0 0 0 3px var(--parchment), 0 0 0 4px var(--rule), 0 10px 28px rgb(0 0 0 / .45);
+}
+.cartouche {
+  top: calc(18px + env(safe-area-inset-top, 0px));
+  left: max(18px, env(safe-area-inset-left, 0px));
+  max-width: min(360px, calc(100vw - 36px));
+  padding: 14px 18px 12px;
+  text-align: center;
+}
+.cartouche .kicker { font-family: var(--font-caps); font-size: 12px; letter-spacing: .18em; color: var(--rule); }
+.cartouche h1 { font-family: var(--font-display); font-weight: 400; font-size: 34px; line-height: 1.05; margin: 4px 0 6px; text-wrap: balance; }
+.cartouche p { font-size: 13.5px; line-height: 1.45; margin: 0; font-style: italic; }
+.cartouche .flourish { display: block; margin: 8px auto 0; width: 120px; height: 10px; }
+
+.tray {
+  left: max(18px, env(safe-area-inset-left, 0px));
+  bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+  padding: 12px 14px;
+  display: grid; gap: 10px;
+  width: min(300px, calc(100vw - 36px));
+}
+.tray .row { display: flex; gap: 8px; flex-wrap: wrap; }
+.tray button {
+  flex: 1 1 auto;
+  font-family: var(--font-caps); font-size: 14px; letter-spacing: .06em;
+  color: var(--ink); background: transparent;
+  border: 1px solid var(--rule); padding: 7px 10px; cursor: pointer;
+}
+.tray button:hover { background: rgb(138 106 67 / .14); }
+.tray button:focus-visible, .tray input:focus-visible { outline: 2px solid var(--rouge); outline-offset: 2px; }
+.tray button[aria-pressed="true"] { background: var(--ink); color: var(--parchment); border-color: var(--ink); }
+.tray label { font-family: var(--font-caps); font-size: 13px; letter-spacing: .06em; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; }
+.tray input[type=range] { width: 100%; accent-color: var(--ink); }
+.tray .stops input { width: 100%; margin: 0; }
+.tray .ticks { display: flex; justify-content: space-between; margin-top: 4px; }
+.tray .ticks span { font-family: var(--font-data); font-size: 11px; line-height: 1.25; color: #8a6a43; transition: color .2s; }
+.tray .ticks span:nth-child(2) { text-align: center; }
+.tray .ticks span:nth-child(3) { text-align: right; }
+.tray .ticks span.on { color: var(--ink); }
+.tray .years span { font-family: var(--font-data); font-size: 12px; font-variant-numeric: tabular-nums; color: #8a6a43; transition: color .2s; }
+.tray .years span.on { color: var(--ink); }
+.tray .val { font-family: var(--font-data); font-size: 12px; font-variant-numeric: tabular-nums; min-width: 3.5ch; text-align: right; }
+.tray .source { font-size: 11.5px; line-height: 1.4; color: #5c4630; border-top: 1px solid rgb(138 106 67 / .5); padding-top: 8px; margin: 0; }
+
+.readout {
+  right: max(18px, env(safe-area-inset-right, 0px));
+  bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+  padding: 6px 10px;
+  font-family: var(--font-data); font-size: 12px; font-variant-numeric: tabular-nums;
+}
+
+.pin { display: grid; justify-items: center; pointer-events: none; transition: opacity .4s; }
+.pin svg { width: 16px; height: 16px; }
+.pin span { font-family: var(--font-display); font-style: italic; font-size: 15px; color: var(--ink); text-shadow: 0 0 3px var(--parchment), 0 0 6px var(--parchment); white-space: nowrap; }
+.pin.faded > * { opacity: 0; }
+.pin > * { transition: opacity .4s; }
+
+.maplibregl-ctrl-attrib { font-family: var(--font-body); background: rgb(234 217 180 / .85) !important; color: var(--ink); }
+.maplibregl-ctrl-attrib a { color: var(--ink); }
+
+@media (max-width: 640px) {
+  .cartouche { padding: 10px 12px 8px; }
+  .cartouche h1 { font-size: 26px; }
+  .cartouche p { font-size: 12.5px; }
+  .cartouche .flourish { display: none; }
+  .readout { bottom: auto; top: calc(18px + env(safe-area-inset-top, 0px)); }
+  .cartouche { max-width: calc(100vw - 36px - 150px); }
+}
+@media (max-width: 420px) { .readout { display: none; } .cartouche { max-width: calc(100vw - 36px - 52px); } .tray .source { font-size: 10.5px; } }
+</style>
+
+<div id="map" role="region" aria-label="Globe with Tegucigalpa in 1983 and 2026, as maps and from satellite"></div>
+
+<header class="cartouche">
+  <div class="kicker">Honduras · 14° N, 87° W</div>
+  <h1>Tegucigalpa, 1983–2026</h1>
+  <p>The valley as the surveyors drew it, laid back onto the globe. Slide toward 2026 to watch the city grow, then see it from orbit.</p>
+  <svg class="flourish" viewBox="0 0 120 10" aria-hidden="true"><path d="M2 5 H50 M70 5 H118" stroke="#8a6a43" stroke-width="1"/><path d="M60 1 L64 5 L60 9 L56 5 Z" fill="#9b3b2a"/></svg>
+</header>
+
+<section class="tray" aria-label="Map controls">
+  <div class="row">
+    <button id="flyTo" type="button">Fly to Tegucigalpa</button>
+    <button id="flyOut" type="button">Whole globe</button>
+  </div>
+  <div class="row">
+    <button id="toggleSheet" type="button" aria-pressed="true">Maps on</button>
+  </div>
+  <div class="stops">
+    <input id="year" type="range" min="0" max="200" value="0" step="1" aria-label="Time and view" aria-valuetext="1983 survey">
+    <div class="ticks" aria-hidden="true"><span class="on">1983<br>survey</span><span>2026<br>map</span><span>2026<br>satellite</span></div>
+  </div>
+  <p class="source">1983: Tegucigalpa and Lepaterique, 1:50,000 topographic series. Perry-Castañeda Library Map Collection, courtesy of the University of Texas Libraries, The University of Texas at Austin. Mosaic and georeferencing: Yanira A. Rivera.<br>2026 map: map data © OpenStreetMap contributors, SRTM; map style © OpenTopoMap (CC-BY-SA); captured 4 Nov 2026.<br>2026 satellite: contains modified Copernicus Sentinel data 2026, Sentinel-2 L2A true color, acquired 9 Feb 2026.<br>Coastlines and borders: Natural Earth.</p>
+</section>
+
+<div class="readout" id="readout" aria-live="off">14°05′ N · 87°13′ W</div>
+
+<script src="https://cdn.jsdelivr.net/npm/maplibre-gl@5.6.0/dist/maplibre-gl.js"></script>
+<script>
+(() => {
+  const TEGUS = [-87.2048, 14.0995];
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const abs = name => new URL(name, location.href).href;
+
+  // graticule every 15°, densified so it curves on the globe
+  function graticule(step = 15) {
+    const lines = [];
+    for (let lon = -180; lon <= 180; lon += step) {
+      const c = []; for (let lat = -80; lat <= 80; lat += 2) c.push([lon, lat]);
+      lines.push({ type: 'Feature', properties: { kind: lon === 0 ? 'meridian' : 'line' }, geometry: { type: 'LineString', coordinates: c } });
+    }
+    for (let lat = -75; lat <= 75; lat += step) {
+      const c = []; for (let lon = -180; lon <= 180; lon += 2) c.push([lon, lat]);
+      lines.push({ type: 'Feature', properties: { kind: lat === 0 ? 'equator' : 'line' }, geometry: { type: 'LineString', coordinates: c } });
+    }
+    for (const lat of [23.44, -23.44]) {
+      const c = []; for (let lon = -180; lon <= 180; lon += 2) c.push([lon, lat]);
+      lines.push({ type: 'Feature', properties: { kind: 'tropic' }, geometry: { type: 'LineString', coordinates: c } });
+    }
+    return { type: 'FeatureCollection', features: lines };
+  }
+
+  const map = new maplibregl.Map({
+    container: 'map',
+    center: [-60, 12], zoom: 1.6, minZoom: 0.8, maxZoom: 17,
+    attributionControl: { compact: true },
+    style: {
+      version: 8,
+      projection: { type: 'globe' },
+      sky: { 'atmosphere-blend': ['interpolate', ['linear'], ['zoom'], 0, 0.6, 5, 0.25, 7, 0] },
+      sources: {
+        land: { type: 'geojson', data: abs('land50.geojson') },
+        borders: { type: 'geojson', data: abs('borders.geojson'), attribution: 'Natural Earth' },
+        honduras: { type: 'geojson', data: abs('honduras.geojson') },
+        grat: { type: 'geojson', data: graticule() }
+      },
+      layers: [
+        { id: 'sea', type: 'background', paint: { 'background-color': '#9fb3a6' } },
+        { id: 'land', type: 'fill', source: 'land', paint: { 'fill-color': '#ead9b4' } },
+        { id: 'hn', type: 'fill', source: 'honduras', paint: { 'fill-color': '#e3c993' } },
+        { id: 'coast', type: 'line', source: 'land', paint: { 'line-color': '#6e5235', 'line-width': ['interpolate', ['linear'], ['zoom'], 1, 0.5, 8, 1.4] } },
+        { id: 'borders', type: 'line', source: 'borders', paint: { 'line-color': '#8a6a43', 'line-width': 0.6, 'line-dasharray': [3, 2] } },
+        { id: 'tropics', type: 'line', source: 'grat', filter: ['==', ['get', 'kind'], 'tropic'], paint: {
+            'line-color': '#7d6240', 'line-width': 0.8, 'line-dasharray': [4, 3],
+            'line-opacity': ['interpolate', ['linear'], ['zoom'], 3, 0.55, 6, 0] } },
+        { id: 'grat', type: 'line', source: 'grat', filter: ['!=', ['get', 'kind'], 'tropic'], paint: {
+            'line-color': '#7d6240',
+            'line-opacity': ['interpolate', ['linear'], ['zoom'], 3, 0.55, 6, 0],
+            'line-width': ['match', ['get', 'kind'], ['equator', 'meridian'], 1.1, 0.45] } }
+      ]
+    }
+  });
+  map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'top-right');
+
+  // three dated baselines, each tile pinned by its own corners: satellite at the bottom, the 2026 map above it, 1983 on top
+  const ids = { s2_2026: [], osm2026: [], sheet: [] };
+  Promise.all(['s2_2026', 'osm2026', 'sheet'].map(n => fetch(abs(n + '.json')).then(r => r.json()).then(m => [n, m]))).then(sets => {
+    const add = () => sets.forEach(([n, meta]) => meta.tiles.forEach((t, i) => {
+      const id = n + i; ids[n].push(id);
+      map.addSource(id, { type: 'image', url: abs(t.file), coordinates: t.coordinates });
+      map.addLayer({ id, type: 'raster', source: id, paint: { 'raster-opacity': 1, 'raster-fade-duration': 0, 'raster-resampling': 'linear' } }, 'tropics');
+    }));
+    map.loaded() ? add() : map.once('load', add);
+  });
+
+  // the pin, fading out once the sheet is legible
+  const pinEl = document.createElement('div');
+  pinEl.className = 'pin';
+  pinEl.innerHTML = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1 L9.8 6.2 L15 8 L9.8 9.8 L8 15 L6.2 9.8 L1 8 L6.2 6.2 Z" fill="#9b3b2a" stroke="#ead9b4" stroke-width="0.8"/></svg><span>Tegucigalpa</span>';
+  new maplibregl.Marker({ element: pinEl, anchor: 'top', offset: [0, -8] }).setLngLat(TEGUS).addTo(map);
+  const updatePin = () => pinEl.classList.toggle('faded', map.getZoom() > 9.5);
+  map.on('zoom', updatePin);
+
+  // gentle spin until someone touches the globe
+  let spinning = !reduceMotion;
+  const stopSpin = () => { spinning = false; };
+  ['mousedown', 'touchstart', 'wheel', 'dragstart'].forEach(e => map.on(e, stopSpin));
+  function spin() {
+    if (!spinning || map.getZoom() > 3) return;
+    const c = map.getCenter(); c.lng -= 4;
+    map.easeTo({ center: c, duration: 1000, easing: n => n });
+  }
+  map.on('moveend', () => { if (spinning) spin(); });
+  map.once('load', () => { if (spinning) spin(); });
+
+  // controls
+  const $ = id => document.getElementById(id);
+  $('flyTo').addEventListener('click', () => {
+    stopSpin();
+    map.flyTo({ center: TEGUS, zoom: 12.2, pitch: 0, bearing: 0, duration: reduceMotion ? 0 : 6500, curve: 1.6, essential: true });
+  });
+  $('flyOut').addEventListener('click', () => {
+    stopSpin();
+    map.flyTo({ center: [-87.2, 14.1], zoom: 1.7, pitch: 0, bearing: 0, duration: reduceMotion ? 0 : 4000, essential: true });
+  });
+  let on = true;
+  $('toggleSheet').addEventListener('click', e => {
+    on = !on;
+    [...ids.s2_2026, ...ids.osm2026, ...ids.sheet].forEach(id => map.setLayoutProperty(id, 'visibility', on ? 'visible' : 'none'));
+    e.currentTarget.setAttribute('aria-pressed', String(on));
+    e.currentTarget.textContent = on ? 'Maps on' : 'Maps off';
+  });
+  const clamp = x => Math.max(0, Math.min(1, x));
+  const names = ['1983 survey', '2026 map', '2026 satellite'];
+  $('year').addEventListener('input', e => {
+    const v = +e.target.value;
+    ids.sheet.forEach(id => map.setPaintProperty(id, 'raster-opacity', 1 - clamp(v / 100)));
+    ids.osm2026.forEach(id => map.setPaintProperty(id, 'raster-opacity', 1 - clamp((v - 100) / 100)));
+    const near = Math.round(v / 100);
+    document.querySelectorAll('.ticks span').forEach((s, i) => s.classList.toggle('on', i === near));
+    e.target.setAttribute('aria-valuetext', names[near]);
+  });
+
+  // coordinates in degrees and minutes, like the margins of the sheet
+  const dm = (v, pos, neg) => {
+    const a = Math.abs(v), d = Math.floor(a), m = Math.round((a - d) * 60);
+    return `${m === 60 ? d + 1 : d}°${String(m === 60 ? 0 : m).padStart(2, '0')}′ ${v >= 0 ? pos : neg}`;
+  };
+  const show = ll => { $('readout').textContent = `${dm(ll.lat, 'N', 'S')} · ${dm(ll.lng, 'E', 'W')}`; };
+  map.on('mousemove', e => show(e.lngLat));
+  map.on('move', () => { if (!matchMedia('(hover: hover)').matches) show(map.getCenter()); });
+})();
+</script>
