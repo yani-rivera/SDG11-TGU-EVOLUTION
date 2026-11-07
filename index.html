@@ -68,13 +68,21 @@ body { background: var(--night); color: var(--parchment); font-family: var(--fon
 .tray label { font-family: var(--font-caps); font-size: 13px; letter-spacing: .06em; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; }
 .tray input[type=range] { width: 100%; accent-color: var(--ink); }
 .tray .stops input { width: 100%; margin: 0; }
-/* year ticks are placed from globe.config.json, so any number of years fits */
-.tray .ticks { position: relative; height: 16px; margin: 4px 8px 0; }
-.tray .ticks span { position: absolute; top: 0; transform: translateX(-50%); font-family: var(--font-data); font-size: 11px; line-height: 1.25; color: #8a6a43; transition: color .2s; white-space: nowrap; }
-.tray .ticks span:first-child { transform: translateX(-8px); }
-.tray .ticks span:last-child:not(:first-child) { transform: translateX(calc(-100% + 8px)); }
-.tray .ticks span.on { color: var(--ink); }
-.tray .view-note { font-size: 11.5px; font-style: italic; color: #5c4630; margin: -4px 0 0; min-height: 1em; }
+/* compare two layers: pick each, then fade from the first to the second */
+.tray .compare { display: grid; grid-template-columns: 1fr auto 1fr; gap: 6px; align-items: center; }
+.tray select {
+  min-width: 0; width: 100%;
+  font-family: var(--font-caps); font-size: 13px; letter-spacing: .04em;
+  color: var(--ink); background: transparent;
+  border: 1px solid var(--rule); border-radius: 0; padding: 6px 4px; cursor: pointer;
+}
+.tray select:focus-visible { outline: 2px solid var(--rouge); outline-offset: 2px; }
+.tray .compare button { flex: none; padding: 6px 8px; font-family: var(--font-data); }
+.tray .ends { display: flex; justify-content: space-between; gap: 8px; margin-top: 4px; }
+.tray .ends span { font-family: var(--font-data); font-size: 11px; color: #8a6a43; transition: color .2s; }
+.tray .ends span.on { color: var(--ink); }
+.tray .status { font-size: 11.5px; font-style: italic; color: #5c4630; margin: -4px 0 0; }
+.tray .status:empty { display: none; }
 .tray button:disabled { opacity: .4; cursor: not-allowed; }
 .tray .years span { font-family: var(--font-data); font-size: 12px; font-variant-numeric: tabular-nums; color: #8a6a43; transition: color .2s; }
 .tray .years span.on { color: var(--ink); }
@@ -113,7 +121,7 @@ body { background: var(--night); color: var(--parchment); font-family: var(--fon
 <header class="cartouche">
   <div class="kicker" id="kicker">Honduras · 14° N, 87° W</div>
   <h1 id="title">Tegucigalpa, 1983–2026</h1>
-  <p id="intro">The valley as the surveyors drew it, laid back onto the globe. Slide through the years to watch the city grow, or switch to the satellite view.</p>
+  <p id="intro">The valley as the surveyors drew it, laid back onto the globe. Pick two moments and slide between them to watch the city grow.</p>
   <svg class="flourish" viewBox="0 0 120 10" aria-hidden="true"><path d="M2 5 H50 M70 5 H118" stroke="#8a6a43" stroke-width="1"/><path d="M60 1 L64 5 L60 9 L56 5 Z" fill="#9b3b2a"/></svg>
   <div class="made">Made for the <a href="https://30daymapchallenge.com" target="_blank" rel="noopener">#30DayMapChallenge</a> 2026 · Yanira A. Rivera</div>
 </header>
@@ -123,15 +131,18 @@ body { background: var(--night); color: var(--parchment); font-family: var(--fon
     <button id="flyTo" type="button">Fly to Tegucigalpa</button>
     <button id="flyOut" type="button">Whole globe</button>
   </div>
-  <div class="row" role="group" aria-label="View">
-    <button id="viewMap" type="button" aria-pressed="true">Map</button>
-    <button id="viewSat" type="button" aria-pressed="false">Satellite</button>
-    <button id="toggleSheet" type="button" aria-pressed="true">Layers on</button>
+  <div class="compare" role="group" aria-label="Layers to compare">
+    <select id="pickA" aria-label="First layer, on top"></select>
+    <button id="swap" type="button" aria-label="Swap the two layers" title="Swap">⇄</button>
+    <select id="pickB" aria-label="Second layer, underneath"></select>
   </div>
-  <p class="view-note" id="viewNote"></p>
   <div class="stops">
-    <input id="year" type="range" min="0" max="0" value="0" step="1" aria-label="Year">
-    <div class="ticks" id="ticks" aria-hidden="true"></div>
+    <input id="year" type="range" min="0" max="100" value="0" step="1" aria-label="Fade from the first layer to the second">
+    <div class="ends" aria-hidden="true"><span id="labelA"></span><span id="labelB"></span></div>
+  </div>
+  <p class="status" id="status" aria-live="polite"></p>
+  <div class="row">
+    <button id="toggleSheet" type="button" aria-pressed="true">Layers on</button>
   </div>
   <p class="source" id="source"></p>
 </section>

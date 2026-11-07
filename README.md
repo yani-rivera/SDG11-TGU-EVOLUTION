@@ -2,7 +2,7 @@
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23957998.svg)](https://doi.org/10.5281/zenodo.23957998)
 
-Tegucigalpa, Honduras, across 43 years on an interactive globe: the **1983 topographic survey**, the **2026 OpenStreetMap map** and a **2026 Sentinel-2 satellite image**, aligned on one slider as dated baselines for SDG 11 urban research.
+Tegucigalpa, Honduras, across 43 years on an interactive globe: the **1983 topographic survey**, the **2026 OpenStreetMap map** and a **2026 Sentinel-2 satellite image**, as dated baselines for SDG 11 urban research. Pick any two and slide between them.
 
 Made for the **#30DayMapChallenge 2026**.
 
@@ -33,11 +33,11 @@ tools/              sheet_to_globe: the toolkit that rebuilds every layer
 
 ## Page settings
 
-The page is built entirely from settings files, so `index.html` and `globe.js` don't change when a baseline or a city is added. The year slider, the Map / Satellite switch, the credits and the title's year range all come from them.
+The page is built entirely from settings files, so `index.html` and `globe.js` don't change when a baseline or a city is added. The two layer pickers, the credits and the title's year range all come from them.
 
 **`globe.config.json`** holds what is shared: `city` (the folder in `data/` that opens by default), `load_from_zoom`, `max_loaded` and the base-map credit. A link ending in `?city=<folder>` opens another city, so several can be live from the same page.
 
-**`data/<city>/city.json`** holds what belongs to one city: `title`, `kicker`, `intro`, `focus`, `start` and `layers`. Manifest paths are relative to the city's folder.
+**`data/<city>/city.json`** holds what belongs to one city: `title`, `kicker`, `intro`, `focus`, `start`, `compare` and `layers`. Manifest paths are relative to the city's folder.
 
 **Adding a baseline.** Build it with `sheet_to_globe` (see below; set `output.dir` to the city's folder), then add one entry to that city's `layers`:
 
@@ -46,13 +46,13 @@ The page is built entirely from settings files, so `index.html` and `globe.js` d
   "manifest": "osm2027.json", "credit": "2027 map: map data © OpenStreetMap contributors…" }
 ```
 
-`view` is `map` or `satellite`. A year without a satellite image shows its map, with a note. `"show": false` keeps a baseline in the list but off the page.
+Every layer appears in both pickers, in the order `layers` lists them; the slider fades from the first pick to the second. `compare` sets the pair the page opens with, e.g. `["sheet", "osm2026"]`; without it the page opens on the first and last layers. `"show": false` keeps a baseline in the list but off the page.
 
 **Adding a city.** Make a folder in `data/` (lowercase, e.g. `data/sanpedro/`), build its baselines into it, and write its `city.json`. It opens at `…/?city=sanpedro`, or by default if `city` in `globe.config.json` names it.
 
 **Focus area.** `focus` sets where the pin sits and where "Fly to" goes, either as `center` + `zoom` or as `bounds` `[west, south, east, north]`, plus a `name` for the pin and button. `"start": "focus"` opens the page already zoomed there; `"start": "globe"` opens on the spinning globe.
 
-**Loading.** Baselines download only when the view is zoomed in past `load_from_zoom` (default 8), and only the years in use: the two the slider sits between, in the chosen view, plus the next year ahead. At most `max_loaded` baselines (default 4) stay in memory; the least recently used are dropped first.
+**Loading.** Baselines download only when the view is zoomed in past `load_from_zoom` (default 8), and only the two layers being compared. At most `max_loaded` baselines (default 4) stay in memory; the least recently used are dropped first.
 
 ## Rebuilding the layers
 

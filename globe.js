@@ -9,7 +9,6 @@
   const abs = name => new URL(name, location.href).href;
   const $ = id => document.getElementById(id);
   const clamp = x => Math.max(0, Math.min(1, x));
-  const STEP = 100;   // slider units between two years, so the fade is smooth
 
   // ---------- config ----------
   async function getJSON(url, what) {
@@ -46,18 +45,13 @@
     return cfg;
   }
 
-  // years in order, each with its layers by view ({ map: layer, satellite: layer })
-  function groupByYear(layers) {
-    const years = new Map();
-    for (const l of layers) {
-      if (!years.has(l.year)) years.set(l.year, {});
-      years.get(l.year)[l.view] = l;
-    }
-    return [...years.entries()].sort((a, b) => a[0] - b[0]).map(([year, views]) => ({ year, views }));
+  // the pair the page opens with: "compare": [first id, second id] in city.json,
+  // otherwise the first and last layers listed
+  function openingPair(cfg) {
+    const byId = id => cfg.layers.find(l => l.id === id);
+    const [a, b] = (cfg.compare || []).map(byId);
+    return [a || cfg.layers[0], b || cfg.layers[cfg.layers.length - 1]];
   }
-
-  // the layer to show for a year in the chosen view; falls back to whatever that year has
-  const pick = (views, view) => views[view] || views.map || Object.values(views)[0];
 
   // camera for the focus area: either center + zoom, or bounds [west, south, east, north]
   function focusCamera(map, focus) {
@@ -71,8 +65,10 @@
   const focusCenter = f => f.center || [(f.bounds[0] + f.bounds[2]) / 2, (f.bounds[1] + f.bounds[3]) / 2];
 
   // ---------- page text ----------
-  function fillText(cfg, years) {
-    const span = years.length > 1 ? `, ${years[0].year}–${years[years.length - 1].year}` : `, ${years[0].year}`;
+  function fillText(cfg) {
+    const ys = cfg.layers.map(l => l.year).filter(y => y != null);
+    const lo = Math.min(...ys), hi = Math.max(...ys);
+    const span = !ys.length ? '' : lo === hi ? `, ${lo}` : `, ${lo}–${hi}`;
     $('title').textContent = cfg.title + span;
     document.title = $('title').textContent;
     $('map').setAttribute('aria-label', `Globe with ${$('title').textContent}, as maps and from satellite`);
@@ -87,18 +83,12 @@
     });
   }
 
-  function buildTicks(years) {
-    const ticks = $('ticks');
-    ticks.textContent = '';
-    years.forEach((y, i) => {
-      const s = document.createElement('span');
-      s.textContent = y.year;
-      s.style.left = years.length > 1 ? `${(i / (years.length - 1)) * 100}%` : '0';
-      ticks.append(s);
-    });
-    const slider = $('year');
-    slider.max = String((years.length - 1) * STEP);
-    slider.disabled = years.length < 2;
+  // both pickers list every layer, in the order city.json lists them
+  function buildPickers(cfg, [a, b]) {
+    for (const [sel, chosen] of [[$('pickA'), a], [$('pickB'), b]]) {
+      sel.textContent = '';
+      cfg.layers.forEach(l => sel.append(new Option(l.label || String(l.year), l.id, false, l === chosen)));
+    }
   }
 
   // ---------- map ----------
@@ -153,18 +143,12 @@
   }
 
   // ---------- loader: a baseline is downloaded only when it is about to be seen ----------
-  // Each baseline's tiles are pinned by their own corners. Older years are stacked above
-  // newer ones, so the slider fades the old city away to reveal the new one.
+  // Each baseline's tiles are pinned by their own corners. New tiles go on top of the
+  // other baselines; the renderer then puts the first chosen layer above the second.
   function makeLoader(map, cfg) {
     const loaded = new Map();    // layer id -> { layer, tileIds, lastUsed }
     const pending = new Map();   // layer id -> promise
     const baselineIds = () => [...loaded.values()].flatMap(e => e.tileIds);
-
-    // the first loaded tile of an older year; a newer year goes underneath it
-    function beforeId(layer) {
-      const older = new Set([...loaded.values()].filter(e => e.layer.year < layer.year).flatMap(e => e.tileIds));
-      return map.getStyle().layers.map(l => l.id).find(id => older.has(id)) || 'tropics';
-    }
 
     async function ensure(layer) {
       if (loaded.has(layer.id)) { loaded.get(layer.id).lastUsed = performance.now(); return; }
@@ -174,12 +158,11 @@
         const r = await fetch(url);
         if (!r.ok) throw new Error(`${layer.manifest}: HTTP ${r.status}`);
         const meta = await r.json();
-        const before = beforeId(layer);
         const tileIds = meta.tiles.map((t, i) => {
           const id = `${layer.id}_${i}`;
           map.addSource(id, { type: 'image', url: new URL(t.file, url).href, coordinates: t.coordinates });
           map.addLayer({ id, type: 'raster', source: id, layout: { visibility: 'none' },
-            paint: { 'raster-opacity': 1, 'raster-fade-duration': 0, 'raster-resampling': 'linear' } }, before);
+            paint: { 'raster-opacity': 1, 'raster-fade-duration': 0, 'raster-resampling': 'linear' } }, 'tropics');
           return id;
         });
         loaded.set(layer.id, { layer, tileIds, lastUsed: performance.now() });
@@ -203,37 +186,42 @@
     return { ensure, trim, loaded, pending, baselineIds };
   }
 
-  // ---------- state: year position, view, layers on/off ----------
-  function makeRenderer(map, cfg, years, loader) {
-    const state = { pos: 0, view: 'map', on: true };
+  // ---------- state: the two chosen layers, the fade between them, layers on/off ----------
+  function makeRenderer(map, cfg, [a, b], loader) {
+    const state = { a, b, pos: 0, on: true };
+    let onTop = null;   // which layer's tiles are currently stacked on top
 
-    // the years the slider sits between, in the chosen view, plus the next one ahead
     function neededLayers() {
       if (!state.on || map.getZoom() < cfg.load_from_zoom) return [];
-      const lo = Math.floor(state.pos / STEP), hi = Math.ceil(state.pos / STEP);
-      const idx = new Set([lo, hi, hi + 1].filter(i => i < years.length));
-      return [...idx].map(i => pick(years[i].views, state.view));
+      return [...new Set([state.a, state.b])];
+    }
+
+    // the first layer must sit above the second so the fade reveals it
+    function stack() {
+      const top = loader.loaded.get(state.a.id);
+      if (!top || onTop === state.a.id) return;
+      top.tileIds.forEach(id => map.moveLayer(id, 'tropics'));
+      onTop = state.a.id;
     }
 
     const paint = () => {
-      const near = Math.round(state.pos / STEP);
-      years.forEach((y, i) => {
-        const shown = pick(y.views, state.view);
-        // a year stays opaque until the slider passes it, then fades into the next one
-        const opacity = i === years.length - 1 ? 1 : 1 - clamp((state.pos - i * STEP) / STEP);
-        Object.values(y.views).forEach(l => (loader.loaded.get(l.id)?.tileIds || []).forEach(id => {
-          const visible = state.on && l === shown && opacity > 0;
+      stack();
+      const fade = state.a === state.b ? 0 : state.pos / 100;
+      for (const { layer, tileIds } of loader.loaded.values()) {
+        const opacity = layer === state.a ? 1 - fade : layer === state.b ? 1 : 0;
+        tileIds.forEach(id => {
+          const visible = state.on && opacity > 0;
           map.setLayoutProperty(id, 'visibility', visible ? 'visible' : 'none');
           if (visible) map.setPaintProperty(id, 'raster-opacity', opacity);
-        }));
-      });
-      const current = pick(years[near].views, state.view);
-      document.querySelectorAll('#ticks span').forEach((s, i) => s.classList.toggle('on', i === near));
-      $('year').setAttribute('aria-valuetext', current.label || String(years[near].year));
-      let note = '';
-      if (state.view !== 'map' && current.view !== state.view) note = `No ${state.view} view for ${years[near].year}; showing the ${current.view}.`;
-      else if (state.on && loader.pending.has(current.id)) note = `Loading ${current.label || years[near].year}…`;
-      $('viewNote').textContent = note;
+        });
+      }
+      $('labelA').textContent = state.a.label || state.a.year;
+      $('labelB').textContent = state.b.label || state.b.year;
+      $('labelA').classList.toggle('on', fade < 0.5);
+      $('labelB').classList.toggle('on', fade >= 0.5);
+      $('year').setAttribute('aria-valuetext', fade < 0.5 ? (state.a.label || state.a.year) : (state.b.label || state.b.year));
+      const waiting = neededLayers().filter(l => loader.pending.has(l.id));
+      $('status').textContent = waiting.length ? `Loading ${waiting.map(l => l.label || l.year).join(' and ')}…` : '';
     };
 
     const render = () => {
@@ -241,29 +229,34 @@
       paint();
       if (!needed.length) return;
       const keep = new Set(needed.map(l => l.id));
-      needed.forEach(l => loader.ensure(l).then(() => { loader.trim(keep); paint(); }).catch(err => {
+      needed.forEach(l => loader.ensure(l).then(() => { loader.trim(keep); onTop = null; paint(); }).catch(err => {
         console.error(err);
-        $('viewNote').textContent = `Could not load ${l.label || l.id}.`;
+        $('status').textContent = `Could not load ${l.label || l.id}.`;
       }));
       paint();   // shows "Loading…" while the downloads run
       loader.trim(keep);
     };
     map.on('zoomend', render);
-    return { state, render };
+    return { state, render, reorder: () => { onTop = null; } };
   }
 
   // ---------- wiring ----------
-  function wireControls(map, cfg, years, { state, render }) {
-    const anyView = v => years.some(y => y.views[v]);
-    $('viewSat').disabled = !anyView('satellite');
-    const setView = v => {
-      state.view = v;
-      $('viewMap').setAttribute('aria-pressed', String(v === 'map'));
-      $('viewSat').setAttribute('aria-pressed', String(v === 'satellite'));
+  function wireControls(cfg, { state, render, reorder }) {
+    const byId = id => cfg.layers.find(l => l.id === id);
+    const choose = () => {
+      state.a = byId($('pickA').value);
+      state.b = byId($('pickB').value);
+      reorder();
       render();
     };
-    $('viewMap').addEventListener('click', () => setView('map'));
-    $('viewSat').addEventListener('click', () => setView('satellite'));
+    $('pickA').addEventListener('change', choose);
+    $('pickB').addEventListener('change', choose);
+    $('swap').addEventListener('click', () => {
+      [$('pickA').value, $('pickB').value] = [$('pickB').value, $('pickA').value];
+      $('year').value = String(100 - +$('year').value);   // keep the same picture on screen
+      state.pos = +$('year').value;
+      choose();
+    });
     $('year').addEventListener('input', e => { state.pos = +e.target.value; render(); });
     $('toggleSheet').addEventListener('click', e => {
       state.on = !state.on;
@@ -332,9 +325,9 @@
       $('source').textContent = `Could not load the layer settings (${err.message}).`;
       throw err;
     }
-    const years = groupByYear(cfg.layers);
-    fillText(cfg, years);
-    buildTicks(years);
+    const pair = openingPair(cfg);
+    fillText(cfg);
+    buildPickers(cfg, pair);
 
     const prefocus = cfg.start === 'focus';
     const globeCamera = { center: [focusCenter(cfg.focus)[0] + 27, 12], zoom: 1.6 };
@@ -349,8 +342,8 @@
     wireCamera(map, cfg, stopSpin);
 
     await ready;
-    const renderer = makeRenderer(map, cfg, years, makeLoader(map, cfg));
-    wireControls(map, cfg, years, renderer);
+    const renderer = makeRenderer(map, cfg, pair, makeLoader(map, cfg));
+    wireControls(cfg, renderer);
     renderer.render();
   })();
 })();

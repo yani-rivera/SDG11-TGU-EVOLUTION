@@ -1,8 +1,8 @@
 {
- "_about": "Tegucigalpa: title, focus area and baselines. Manifest paths are relative to this folder. To add a baseline, build it with tools/sheet_to_globe (output dir data/tegucigalpa) and add one entry to layers; show: false keeps a layer listed but off the page.",
+ "_about": "Tegucigalpa: title, focus area and baselines. Manifest paths are relative to this folder. To add a baseline, build it with tools/sheet_to_globe (output dir data/tegucigalpa) and add one entry to layers (it appears in both pickers, in list order); compare sets the pair the page opens with; show: false keeps a layer listed but off the page.",
  "title": "Tegucigalpa",
  "kicker": "Honduras · 14° N, 87° W",
- "intro": "The valley as the surveyors drew it, laid back onto the globe. Slide through the years to watch the city grow, or switch to the satellite view.",
+ "intro": "The valley as the surveyors drew it, laid back onto the globe. Pick two moments and slide between them to watch the city grow.",
  "focus": {
   "name": "Tegucigalpa",
   "center": [
@@ -14,6 +14,10 @@
   "bearing": 0
  },
  "start": "globe",
+ "compare": [
+  "sheet",
+  "osm2026"
+ ],
  "layers": [
   {
    "id": "sheet",
