@@ -17,7 +17,7 @@ Made for the **#30DayMapChallenge 2026**.
 | 2026 satellite | Sentinel-2 L2A true color. Contains modified Copernicus Sentinel data 2026 | acquired 9 Feb 2026 | Copernicus free and open data |
 | Base map | Natural Earth coastlines and borders | | Public domain |
 
-Each layer's `.json` file (`sheet.json`, `osm2026.json`, `s2_2026.json`) records its corner coordinates and provenance: script version, source file SHA-256, settings and creation time.
+Each layer's `.json` file in `data/` (`sheet.json`, `osm2026.json`, `s2_2026.json`) records its corner coordinates and provenance: script version, source file SHA-256, settings and creation time.
 
 ## Repository layout
 
@@ -25,8 +25,8 @@ Each layer's `.json` file (`sheet.json`, `osm2026.json`, `s2_2026.json`) records
 index.html          the globe page (MapLibre GL JS 5.6.0)
 globe.js            the page logic: reads globe.config.json, loads layers on demand
 globe.config.json   which baselines appear, their credits, and the focus area
-*.json, *.webp      the baselines as image tiles, one manifest .json per baseline
-*.geojson           Natural Earth base map
+data/               everything the page loads: one manifest .json per baseline,
+                    its .webp tiles, and the Natural Earth base map (.geojson)
 tools/              sheet_to_globe: the toolkit that rebuilds every layer
 ```
 
@@ -38,7 +38,7 @@ The page is built entirely from this file. The year slider, the Map / Satellite 
 
 ```json
 { "id": "osm2027", "year": 2027, "view": "map", "label": "2027 map",
-  "manifest": "osm2027.json", "credit": "2027 map: map data © OpenStreetMap contributors…" }
+  "manifest": "data/osm2027.json", "credit": "2027 map: map data © OpenStreetMap contributors…" }
 ```
 
 `view` is `map` or `satellite`. A year without a satellite image shows its map, with a note. `"show": false` keeps a baseline in the list but off the page.

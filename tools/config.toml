@@ -11,7 +11,7 @@ origin = "Perry-Castañeda Library Map Collection, University of Texas Libraries
 notes = "Two georeferenced sheets merged in QGIS into one mosaic before export; a seam is visible where they meet."
 
 [output]
-dir = "globe"
+dir = "../data"          # written straight into the page's data folder
 prefix = "sheet"          # file names: <prefix>_<row>_<col>.webp and <prefix>.json
 format = "WEBP"          # WEBP or PNG (both keep transparency)
 quality = 82             # WEBP only

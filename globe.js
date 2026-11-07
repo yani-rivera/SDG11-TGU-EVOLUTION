@@ -105,9 +105,9 @@
         projection: { type: 'globe' },
         sky: { 'atmosphere-blend': ['interpolate', ['linear'], ['zoom'], 0, 0.6, 5, 0.25, 7, 0] },
         sources: {
-          land: { type: 'geojson', data: abs('land50.geojson') },
-          borders: { type: 'geojson', data: abs('borders.geojson'), attribution: 'Natural Earth' },
-          honduras: { type: 'geojson', data: abs('honduras.geojson') },
+          land: { type: 'geojson', data: abs('data/land50.geojson') },
+          borders: { type: 'geojson', data: abs('data/borders.geojson'), attribution: 'Natural Earth' },
+          honduras: { type: 'geojson', data: abs('data/honduras.geojson') },
           grat: { type: 'geojson', data: graticule() }
         },
         layers: [
