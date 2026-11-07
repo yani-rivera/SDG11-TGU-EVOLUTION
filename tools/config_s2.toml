@@ -11,7 +11,7 @@ acquired = "2026-02-09"
 notes = "Dry-season scene chosen for clear sky over the valley; small clouds over the hills to the north and southeast."
 
 [output]
-dir = "../data"          # written straight into the page's data folder
+dir = "../data/tegucigalpa"        # written straight into the page's data folder
 prefix = "s2_2026"           # file names: <prefix>_<row>_<col>.webp and <prefix>.json
 format = "WEBP"          # WEBP or PNG (both keep transparency)
 quality = 82             # WEBP only

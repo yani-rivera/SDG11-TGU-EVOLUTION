@@ -1,7 +1,10 @@
 (() => {
-  // Everything the page shows comes from globe.config.json: the layers, the years,
-  // the credits and the area it focuses on. Adding a baseline needs no change here.
+  // Everything the page shows comes from configuration, not from this file:
+  // globe.config.json picks the city and holds shared settings, and
+  // data/<city>/city.json holds that city's title, focus area and baselines.
+  // Adding a baseline or a city needs no change here.
   const CONFIG = 'globe.config.json';
+  const DATA = 'data/';
   const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const abs = name => new URL(name, location.href).href;
   const $ = id => document.getElementById(id);
@@ -9,15 +12,35 @@
   const STEP = 100;   // slider units between two years, so the fade is smooth
 
   // ---------- config ----------
+  async function getJSON(url, what) {
+    const r = await fetch(url);
+    if (!r.ok) throw new Error(`${what}: HTTP ${r.status}`);
+    return r.json();
+  }
+
+  // the city: ?city=<folder> in the link wins, otherwise the default in globe.config.json
+  function chooseCity(shared) {
+    const asked = new URLSearchParams(location.search).get('city');
+    const city = (asked || shared.city || '').trim().toLowerCase();
+    if (!/^[a-z0-9_-]+$/.test(city)) throw new Error(`no valid city given (${asked ? '?city=' + asked : CONFIG})`);
+    return city;
+  }
+
   async function loadConfig() {
-    const cfg = await fetch(abs(CONFIG)).then(r => {
-      if (!r.ok) throw new Error(`${CONFIG}: HTTP ${r.status}`);
-      return r.json();
-    });
-    if (!Array.isArray(cfg.layers)) throw new Error(`${CONFIG}: no layers`);
+    const shared = await getJSON(abs(CONFIG), CONFIG);
+    const city = chooseCity(shared);
+    const cityUrl = new URL(`${DATA}${city}/city.json`, location.href);
+    let own;
+    try { own = await getJSON(cityUrl, `${DATA}${city}/city.json`); }
+    catch (err) { throw new Error(`city "${city}" not found in ${DATA} (${err.message})`); }
+
+    const cfg = { ...shared, ...own, city };
+    if (!Array.isArray(cfg.layers)) throw new Error(`${city}/city.json: no layers`);
     cfg.layers = cfg.layers.filter(l => l.show !== false);   // "show": false keeps a baseline listed but off the page
-    if (!cfg.layers.length) throw new Error(`${CONFIG}: every layer has show: false`);
-    if (!cfg.focus || !(cfg.focus.center || cfg.focus.bounds)) throw new Error(`${CONFIG}: focus needs center or bounds`);
+    if (!cfg.layers.length) throw new Error(`${city}/city.json: every layer has show: false`);
+    // manifests are written relative to the city folder
+    cfg.layers.forEach(l => { l.manifestUrl = new URL(l.manifest, cityUrl).href; });
+    if (!cfg.focus || !(cfg.focus.center || cfg.focus.bounds)) throw new Error(`${city}/city.json: focus needs center or bounds`);
     cfg.load_from_zoom ??= 8;      // below this zoom no baseline is downloaded
     cfg.max_loaded ??= 4;          // baselines kept in memory at once
     return cfg;
@@ -52,6 +75,7 @@
     const span = years.length > 1 ? `, ${years[0].year}–${years[years.length - 1].year}` : `, ${years[0].year}`;
     $('title').textContent = cfg.title + span;
     document.title = $('title').textContent;
+    $('map').setAttribute('aria-label', `Globe with ${$('title').textContent}, as maps and from satellite`);
     if (cfg.kicker) $('kicker').textContent = cfg.kicker;
     if (cfg.intro) $('intro').textContent = cfg.intro;
     $('flyTo').textContent = `Fly to ${cfg.focus.name || 'focus'}`;
@@ -105,9 +129,9 @@
         projection: { type: 'globe' },
         sky: { 'atmosphere-blend': ['interpolate', ['linear'], ['zoom'], 0, 0.6, 5, 0.25, 7, 0] },
         sources: {
-          land: { type: 'geojson', data: abs('data/land50.geojson') },
-          borders: { type: 'geojson', data: abs('data/borders.geojson'), attribution: 'Natural Earth' },
-          honduras: { type: 'geojson', data: abs('data/honduras.geojson') },
+          land: { type: 'geojson', data: abs(DATA + 'basemap/land50.geojson') },
+          borders: { type: 'geojson', data: abs(DATA + 'basemap/borders.geojson'), attribution: 'Natural Earth' },
+          honduras: { type: 'geojson', data: abs(DATA + 'basemap/honduras.geojson') },
           grat: { type: 'geojson', data: graticule() }
         },
         layers: [
@@ -146,7 +170,7 @@
       if (loaded.has(layer.id)) { loaded.get(layer.id).lastUsed = performance.now(); return; }
       if (pending.has(layer.id)) return pending.get(layer.id);
       const p = (async () => {
-        const url = new URL(layer.manifest, location.href);
+        const url = new URL(layer.manifestUrl);
         const r = await fetch(url);
         if (!r.ok) throw new Error(`${layer.manifest}: HTTP ${r.status}`);
         const meta = await r.json();
@@ -302,7 +326,12 @@
   (async () => {
     let cfg;
     try { cfg = await loadConfig(); }
-    catch (err) { $('source').textContent = `Could not load the layer settings (${err.message}).`; throw err; }
+    catch (err) {
+      $('title').textContent = 'Map not found';
+      $('intro').textContent = '';
+      $('source').textContent = `Could not load the layer settings (${err.message}).`;
+      throw err;
+    }
     const years = groupByYear(cfg.layers);
     fillText(cfg, years);
     buildTicks(years);

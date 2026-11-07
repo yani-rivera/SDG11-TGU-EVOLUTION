@@ -1,48 +1,7 @@
 {
- "_about": "Settings for the globe page. To add a baseline: build it with tools/sheet_to_globe, then add one entry to layers. To change where the page opens or flies to, edit focus and start. Baselines download only when zoomed in past load_from_zoom, and only the years in use; max_loaded caps how many stay in memory. Add show: false to a layer to keep it listed but off the page.",
-
- "title": "Tegucigalpa",
- "kicker": "Honduras · 14° N, 87° W",
- "intro": "The valley as the surveyors drew it, laid back onto the globe. Slide through the years to watch the city grow, or switch to the satellite view.",
-
- "focus": {
-  "name": "Tegucigalpa",
-  "center": [-87.2048, 14.0995],
-  "zoom": 12.2,
-  "pitch": 0,
-  "bearing": 0
- },
- "start": "globe",
-
+ "_about": "Shared settings for the globe page. city picks the folder in data/ that opens by default; a link ending in ?city=<folder> opens another one. Each city's title, focus and baselines live in data/<city>/city.json. Baselines download only when zoomed in past load_from_zoom, and only the years in use; max_loaded caps how many stay in memory.",
+ "city": "tegucigalpa",
  "load_from_zoom": 8,
  "max_loaded": 4,
-
- "base_credit": "Coastlines and borders: Natural Earth.",
-
- "layers": [
-  {
-   "id": "sheet",
-   "year": 1983,
-   "view": "map",
-   "label": "1983 survey",
-   "manifest": "data/sheet.json",
-   "credit": "1983: Tegucigalpa and Lepaterique, 1:50,000 topographic series. Perry-Castañeda Library Map Collection, courtesy of the University of Texas Libraries, The University of Texas at Austin. Mosaic and georeferencing: Yanira A. Rivera."
-  },
-  {
-   "id": "osm2026",
-   "year": 2026,
-   "view": "map",
-   "label": "2026 map",
-   "manifest": "data/osm2026.json",
-   "credit": "2026 map: map data © OpenStreetMap contributors, SRTM; map style © OpenTopoMap (CC-BY-SA); captured 4 Nov 2026."
-  },
-  {
-   "id": "s2_2026",
-   "year": 2026,
-   "view": "satellite",
-   "label": "2026 satellite",
-   "manifest": "data/s2_2026.json",
-   "credit": "2026 satellite: contains modified Copernicus Sentinel data 2026, Sentinel-2 L2A true color, acquired 9 Feb 2026."
-  }
- ]
+ "base_credit": "Coastlines and borders: Natural Earth."
 }
