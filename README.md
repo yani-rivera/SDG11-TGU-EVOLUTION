@@ -22,11 +22,30 @@ Each layer's `.json` file (`sheet.json`, `osm2026.json`, `s2_2026.json`) records
 ## Repository layout
 
 ```
-index.html          the globe (MapLibre GL JS 5.6.0)
-*.json, *.webp      the three baselines as image tiles
+index.html          the globe page (MapLibre GL JS 5.6.0)
+globe.js            the page logic: reads globe.config.json, loads layers on demand
+globe.config.json   which baselines appear, their credits, and the focus area
+*.json, *.webp      the baselines as image tiles, one manifest .json per baseline
 *.geojson           Natural Earth base map
 tools/              sheet_to_globe: the toolkit that rebuilds every layer
 ```
+
+## Page settings: `globe.config.json`
+
+The page is built entirely from this file. The year slider, the Map / Satellite switch, the credits and the title's year range all come from it, so `index.html` and `globe.js` don't change when a baseline is added.
+
+**Adding a baseline.** Build it with `sheet_to_globe` (see below), then add one entry to `layers`:
+
+```json
+{ "id": "osm2027", "year": 2027, "view": "map", "label": "2027 map",
+  "manifest": "osm2027.json", "credit": "2027 map: map data © OpenStreetMap contributors…" }
+```
+
+`view` is `map` or `satellite`. A year without a satellite image shows its map, with a note. `"show": false` keeps a baseline in the list but off the page.
+
+**Focus area.** `focus` sets where the pin sits and where "Fly to" goes, either as `center` + `zoom` or as `bounds` `[west, south, east, north]`, plus a `name` for the pin and button. `"start": "focus"` opens the page already zoomed there; `"start": "globe"` opens on the spinning globe.
+
+**Loading.** Baselines download only when the view is zoomed in past `load_from_zoom` (default 8), and only the years in use: the two the slider sits between, in the chosen view, plus the next year ahead. At most `max_loaded` baselines (default 4) stay in memory; the least recently used are dropped first.
 
 ## Rebuilding the layers
 
