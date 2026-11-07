@@ -1,0 +1,7 @@
+{
+ "_about": "Shared settings for the globe page. city picks the folder in data/ that opens by default; a link ending in ?city=<folder> opens another one. Each city's title, focus and baselines live in data/<city>/city.json. Baselines download only when zoomed in past load_from_zoom, and only the years in use; max_loaded caps how many stay in memory.",
+ "city": "tegucigalpa",
+ "load_from_zoom": 8,
+ "max_loaded": 4,
+ "base_credit": "Coastlines and borders: Natural Earth."
+}
