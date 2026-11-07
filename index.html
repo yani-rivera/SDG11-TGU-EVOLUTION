@@ -83,6 +83,9 @@ body { background: var(--night); color: var(--parchment); font-family: var(--fon
 .tray .ends span.on { color: var(--ink); }
 .tray .status { font-size: 11.5px; font-style: italic; color: #5c4630; margin: -4px 0 0; }
 .tray .status:empty { display: none; }
+.tray .status.loading { color: var(--ink); animation: breathe 1.6s ease-in-out infinite; }
+@keyframes breathe { 50% { opacity: .45; } }
+@media (prefers-reduced-motion: reduce) { .tray .status.loading { animation: none; } }
 .tray button:disabled { opacity: .4; cursor: not-allowed; }
 .tray .years span { font-family: var(--font-data); font-size: 12px; font-variant-numeric: tabular-nums; color: #8a6a43; transition: color .2s; }
 .tray .years span.on { color: var(--ink); }

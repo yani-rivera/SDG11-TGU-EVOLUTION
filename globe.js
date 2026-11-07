@@ -150,6 +150,19 @@
     const pending = new Map();   // layer id -> promise
     const baselineIds = () => [...loaded.values()].flatMap(e => e.tileIds);
 
+    // resolves once every tile image has arrived (or its source was dropped meanwhile)
+    function imagesArrived(ids) {
+      return new Promise((resolve, reject) => {
+        const done = () => ids.every(id => !map.getSource(id) || map.isSourceLoaded(id));
+        if (done()) return resolve();
+        const finish = fn => { map.off('sourcedata', onData); map.off('error', onError); fn(); };
+        const onData = e => { if (ids.includes(e.sourceId) && done()) finish(resolve); };
+        const onError = e => { if (ids.includes(e.sourceId)) finish(() => reject(new Error(`${e.sourceId}: image did not load`))); };
+        map.on('sourcedata', onData);
+        map.on('error', onError);
+      });
+    }
+
     async function ensure(layer) {
       if (loaded.has(layer.id)) { loaded.get(layer.id).lastUsed = performance.now(); return; }
       if (pending.has(layer.id)) return pending.get(layer.id);
@@ -166,6 +179,7 @@
           return id;
         });
         loaded.set(layer.id, { layer, tileIds, lastUsed: performance.now() });
+        await imagesArrived(tileIds);   // the large sheets take a few seconds
       })().finally(() => pending.delete(layer.id));
       pending.set(layer.id, p);
       return p;
@@ -220,8 +234,13 @@
       $('labelA').classList.toggle('on', fade < 0.5);
       $('labelB').classList.toggle('on', fade >= 0.5);
       $('year').setAttribute('aria-valuetext', fade < 0.5 ? (state.a.label || state.a.year) : (state.b.label || state.b.year));
-      const waiting = neededLayers().filter(l => loader.pending.has(l.id));
-      $('status').textContent = waiting.length ? `Loading ${waiting.map(l => l.label || l.year).join(' and ')}…` : '';
+      const waiting = [...new Set([state.a, state.b])].filter(l => loader.pending.has(l.id));
+      const zoomedOut = state.on && map.getZoom() < cfg.load_from_zoom;
+      const status = $('status');
+      status.classList.toggle('loading', waiting.length > 0);
+      status.textContent = waiting.length
+        ? `Loading ${waiting.map(l => l.label || l.year).join(' and ')}… the maps are large, give them a few seconds.`
+        : zoomedOut ? `Zoom in, or use “Fly to ${cfg.focus.name || 'focus'}”, to see the maps.` : '';
     };
 
     const render = () => {
@@ -237,7 +256,19 @@
       loader.trim(keep);
     };
     map.on('zoomend', render);
-    return { state, render, reorder: () => { onTop = null; } };
+    // start downloading as soon as the view passes city level, not when the motion ends
+    map.on('zoom', () => {
+      const missing = neededLayers().some(l => !loader.loaded.has(l.id) && !loader.pending.has(l.id));
+      if (missing) render();
+    });
+
+    // fetch the chosen pair right away, e.g. while the "Fly to" flight is still in the air
+    const prefetch = () => {
+      if (!state.on) return;
+      [...new Set([state.a, state.b])].forEach(l => loader.ensure(l).then(paint).catch(err => console.error(err)));
+      paint();
+    };
+    return { state, render, prefetch, reorder: () => { onTop = null; } };
   }
 
   // ---------- wiring ----------
@@ -266,8 +297,9 @@
     });
   }
 
-  function wireCamera(map, cfg, stopSpin) {
+  function wireCamera(map, cfg, stopSpin, hooks) {
     $('flyTo').addEventListener('click', () => {
+      hooks.flyTo();
       stopSpin();
       map.flyTo({ ...focusCamera(map, cfg.focus), duration: reduceMotion ? 0 : 6500, curve: 1.6, essential: true });
     });
@@ -339,11 +371,13 @@
     const stopSpin = addSpin(map, !prefocus);
     addPin(map, cfg);
     addReadout(map);
-    wireCamera(map, cfg, stopSpin);
+    const hooks = { flyTo: () => {} };   // filled in once the layers can load
+    wireCamera(map, cfg, stopSpin, hooks);
 
     await ready;
     const renderer = makeRenderer(map, cfg, pair, makeLoader(map, cfg));
     wireControls(cfg, renderer);
+    hooks.flyTo = renderer.prefetch;
     renderer.render();
   })();
 })();
