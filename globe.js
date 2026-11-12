@@ -33,7 +33,7 @@
     try { own = await getJSON(cityUrl, `${DATA}${city}/city.json`); }
     catch (err) { throw new Error(`city "${city}" not found in ${DATA} (${err.message})`); }
 
-    const cfg = { ...shared, ...own, city };
+    const cfg = { ...shared, ...own, city, default_city: shared.city };
     if (!Array.isArray(cfg.layers)) throw new Error(`${city}/city.json: no layers`);
     cfg.layers = cfg.layers.filter(l => l.show !== false);   // "show": false keeps a baseline listed but off the page
     if (!cfg.layers.length) throw new Error(`${city}/city.json: every layer has show: false`);
@@ -89,6 +89,72 @@
       sel.textContent = '';
       cfg.layers.forEach(l => sel.append(new Option(l.label || String(l.year), l.id, false, l === chosen)));
     }
+  }
+
+  // the city chooser: globe.config.json may list the folders to offer, e.g. "cities": ["tegucigalpa", "sanpedro"].
+  // It stays hidden until two cities can be read. Choosing one reopens the page at ?city=<folder>.
+  async function buildCityPicker(cfg) {
+    const ids = [...new Set([...(cfg.cities || []), cfg.city])].filter(id => /^[a-z0-9_-]+$/.test(id));
+    if (ids.length < 2) return;
+    const found = (await Promise.all(ids.map(id =>
+      id === cfg.city ? { id, name: cfg.focus.name || cfg.title }
+        : getJSON(abs(`${DATA}${id}/city.json`), id).then(c => ({ id, name: (c.focus && c.focus.name) || c.title || id })).catch(() => null)
+    ))).filter(Boolean);
+    if (found.length < 2) return;
+    const sel = $('city');
+    found.forEach(c => sel.append(new Option(c.name, c.id, false, c.id === cfg.city)));
+    sel.addEventListener('change', () => {
+      const url = new URL(location.href);
+      if (sel.value === cfg.default_city) url.searchParams.delete('city'); else url.searchParams.set('city', sel.value);
+      location.assign(url);
+    });
+    $('cityRow').hidden = false;
+  }
+
+  // ---------- small screens ----------
+  // On a phone the tray docks along the bottom edge, the title box shrinks to its title,
+  // and the sources and the whole tray can be folded away. The stylesheet does the layout;
+  // this only keeps the open/closed state and tells the stylesheet how tall the dock is.
+  function addLayout() {
+    const compact = matchMedia('(max-width: 640px), (max-height: 560px)');   // phones, either way up
+    const docked = matchMedia('(max-width: 640px)');                         // tray spans the bottom edge
+    const cartouche = $('cartouche'), tray = $('tray'), sources = $('sources');
+
+    const toggle = (button, target, cls, labels) => {
+      const set = closed => {
+        target.classList.toggle(cls, closed);
+        button.setAttribute('aria-expanded', String(!closed));
+        if (labels) button.querySelector('.label').textContent = closed ? labels.closed : labels.open;
+      };
+      button.addEventListener('click', () => set(!target.classList.contains(cls)));
+      return set;
+    };
+    const setAbout = toggle($('aboutToggle'), cartouche, 'closed');
+    const setTray = toggle($('trayToggle'), tray, 'collapsed', { open: 'Hide controls', closed: 'Show controls' });
+
+    // starting state for the screen size; the reader's own taps take over from there
+    const defaults = () => { setAbout(true); setTray(false); sources.open = !compact.matches; };
+    defaults();
+    compact.addEventListener('change', defaults);
+
+    // the attribution button and the readout sit just above the docked tray
+    const publishDock = () => {
+      const h = docked.matches ? Math.round(tray.getBoundingClientRect().height) : 0;
+      document.documentElement.style.setProperty('--dock-h', h + 'px');
+    };
+    new ResizeObserver(publishDock).observe(tray);
+    docked.addEventListener('change', publishDock);
+    publishDock();
+
+    // screen space the boxes take, so "Fly to" centres the city in what is left of the map
+    const padding = () => {
+      if (!compact.matches) return { top: 0, bottom: 0, left: 0, right: 0 };
+      const t = tray.getBoundingClientRect(), c = cartouche.getBoundingClientRect();
+      return docked.matches
+        ? { top: Math.round(c.bottom), bottom: Math.round(t.height), left: 0, right: 0 }
+        : { top: 0, bottom: 0, left: Math.round(t.right), right: 0 };        // phone held sideways
+    };
+    return { padding };
   }
 
   // ---------- map ----------
@@ -297,15 +363,15 @@
     });
   }
 
-  function wireCamera(map, cfg, stopSpin, hooks) {
+  function wireCamera(map, cfg, stopSpin, hooks, layout) {
     $('flyTo').addEventListener('click', () => {
       hooks.flyTo();
       stopSpin();
-      map.flyTo({ ...focusCamera(map, cfg.focus), duration: reduceMotion ? 0 : 6500, curve: 1.6, essential: true });
+      map.flyTo({ ...focusCamera(map, cfg.focus), padding: layout.padding(), duration: reduceMotion ? 0 : 6500, curve: 1.6, essential: true });
     });
     $('flyOut').addEventListener('click', () => {
       stopSpin();
-      map.flyTo({ center: focusCenter(cfg.focus), zoom: 1.7, pitch: 0, bearing: 0, duration: reduceMotion ? 0 : 4000, essential: true });
+      map.flyTo({ center: focusCenter(cfg.focus), zoom: 1.7, pitch: 0, bearing: 0, padding: { top: 0, bottom: 0, left: 0, right: 0 }, duration: reduceMotion ? 0 : 4000, essential: true });
     });
   }
 
@@ -349,6 +415,7 @@
 
   // ---------- start ----------
   (async () => {
+    const layout = addLayout();
     let cfg;
     try { cfg = await loadConfig(); }
     catch (err) {
@@ -360,6 +427,7 @@
     const pair = openingPair(cfg);
     fillText(cfg);
     buildPickers(cfg, pair);
+    buildCityPicker(cfg).catch(err => console.error(err));
 
     const prefocus = cfg.start === 'focus';
     const globeCamera = { center: [focusCenter(cfg.focus)[0] + 27, 12], zoom: 1.6 };
@@ -372,7 +440,7 @@
     addPin(map, cfg);
     addReadout(map);
     const hooks = { flyTo: () => {} };   // filled in once the layers can load
-    wireCamera(map, cfg, stopSpin, hooks);
+    wireCamera(map, cfg, stopSpin, hooks, layout);
 
     await ready;
     const renderer = makeRenderer(map, cfg, pair, makeLoader(map, cfg));
