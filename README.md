@@ -35,7 +35,7 @@ tools/              sheet_to_globe: the toolkit that rebuilds every layer
 
 The page is built entirely from settings files, so `index.html` and `globe.js` don't change when a baseline or a city is added. The two layer pickers, the credits and the title's year range all come from them.
 
-**`globe.config.json`** holds what is shared: `city` (the folder in `data/` that opens by default), `load_from_zoom`, `max_loaded` and the base-map credit. A link ending in `?city=<folder>` opens another city, so several can be live from the same page.
+**`globe.config.json`** holds what is shared: `city` (the folder in `data/` that opens by default), `cities` (the folders offered in the City chooser), `load_from_zoom`, `max_loaded` and the base-map credit. A link ending in `?city=<folder>` opens another city, so several can be live from the same page.
 
 **`data/<city>/city.json`** holds what belongs to one city: `title`, `kicker`, `intro`, `focus`, `start`, `compare` and `layers`. Manifest paths are relative to the city's folder.
 
@@ -48,9 +48,11 @@ The page is built entirely from settings files, so `index.html` and `globe.js` d
 
 Every layer appears in both pickers, in the order `layers` lists them; the slider fades from the first pick to the second. `compare` sets the pair the page opens with, e.g. `["sheet", "osm2026"]`; without it the page opens on the first and last layers. `"show": false` keeps a baseline in the list but off the page.
 
-**Adding a city.** Make a folder in `data/` (lowercase, e.g. `data/sanpedro/`), build its baselines into it, and write its `city.json`. It opens at `…/?city=sanpedro`, or by default if `city` in `globe.config.json` names it.
+**Adding a city.** Make a folder in `data/` (lowercase, e.g. `data/sanpedro/`), build its baselines into it, and write its `city.json`. It opens at `…/?city=sanpedro`, or by default if `city` in `globe.config.json` names it. To offer it on the page itself, add the folder name to `cities` in `globe.config.json`: once that list has two cities, a **City** chooser appears in the controls and switches between them.
 
 **Focus area.** `focus` sets where the pin sits and where "Fly to" goes, either as `center` + `zoom` or as `bounds` `[west, south, east, north]`, plus a `name` for the pin and button. `"start": "focus"` opens the page already zoomed there; `"start": "globe"` opens on the spinning globe.
+
+**Small screens.** On a phone the controls dock along the bottom edge, the title box shrinks to its title (the *i* button opens the rest), the sources start folded, and *Hide controls* folds the dock away. Nothing needs configuring.
 
 **Loading.** Baselines download only when the view is zoomed in past `load_from_zoom` (default 8), and only the two layers being compared. At most `max_loaded` baselines (default 4) stay in memory; the least recently used are dropped first.
 

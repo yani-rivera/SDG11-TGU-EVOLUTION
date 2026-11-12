@@ -1,7 +1,7 @@
 # sheet_to_globe — settings for preparing a georeferenced map sheet for a MapLibre globe
 
 [input]
-geotiff = "alltgu_rendered.tiff"   # RGB(A) GeoTIFF in EPSG:4326 or EPSG:3857 (uint8 or float 0–255)
+geotiff = "../data/alltgu_rendered.tiff"   # RGB(A) GeoTIFF in EPSG:4326 or EPSG:3857 (uint8 or float 0–255)
 
 [source]
 # the input is a mosaic: list the original sheets so they travel with the provenance record
@@ -11,7 +11,7 @@ origin = "Perry-Castañeda Library Map Collection, University of Texas Libraries
 notes = "Two georeferenced sheets merged in QGIS into one mosaic before export; a seam is visible where they meet."
 
 [output]
-dir = "../data/tegucigalpa"        # written straight into the page's data folder
+dir = "../layers"        # writes straight into the repo's layers/ folder
 prefix = "sheet"          # file names: <prefix>_<row>_<col>.webp and <prefix>.json
 format = "WEBP"          # WEBP or PNG (both keep transparency)
 quality = 82             # WEBP only

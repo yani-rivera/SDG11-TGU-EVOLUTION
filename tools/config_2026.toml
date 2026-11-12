@@ -1,7 +1,7 @@
 # sheet_to_globe — settings for preparing a georeferenced map sheet for a MapLibre globe
 
 [input]
-geotiff = "tgu2026.tiff"   # OpenTopoMap web layer, rendered, 6000 x 2073 px
+geotiff = "../data/tgu2026.tiff"   # OpenTopoMap web layer, rendered, 6000 x 2073 px
 
 [source]
 mosaic = false
@@ -11,7 +11,7 @@ captured = "2026-11-04"
 notes = "Frozen 2026 baseline exported from QGIS as a rendered image."
 
 [output]
-dir = "../data/tegucigalpa"        # written straight into the page's data folder
+dir = "../layers"        # writes straight into the repo's layers/ folder
 prefix = "osm2026"         # file names: <prefix>_<row>_<col>.webp and <prefix>.json
 format = "WEBP"          # WEBP or PNG (both keep transparency)
 quality = 82             # WEBP only

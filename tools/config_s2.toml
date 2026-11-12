@@ -1,7 +1,7 @@
 # sheet_to_globe — settings for preparing a georeferenced map sheet for a MapLibre globe
 
 [input]
-geotiff = "s2_2026-02-09_true_color.tiff"   # Sentinel-2 L2A true color, 2500 x 864 px
+geotiff = "../data/s2_2026-02-09_true_color.tiff"   # Sentinel-2 L2A true color, 2500 x 864 px
 
 [source]
 mosaic = false
@@ -11,7 +11,7 @@ acquired = "2026-02-09"
 notes = "Dry-season scene chosen for clear sky over the valley; small clouds over the hills to the north and southeast."
 
 [output]
-dir = "../data/tegucigalpa"        # written straight into the page's data folder
+dir = "../layers"        # writes straight into the repo's layers/ folder
 prefix = "s2_2026"           # file names: <prefix>_<row>_<col>.webp and <prefix>.json
 format = "WEBP"          # WEBP or PNG (both keep transparency)
 quality = 82             # WEBP only

@@ -41,6 +41,9 @@ body { background: var(--night); color: var(--parchment); font-family: var(--fon
 .cartouche .kicker { font-family: var(--font-caps); font-size: 12px; letter-spacing: .18em; color: var(--rule); }
 .cartouche h1 { font-family: var(--font-display); font-weight: 400; font-size: 34px; line-height: 1.05; margin: 4px 0 6px; text-wrap: balance; }
 .cartouche p { font-size: 13.5px; line-height: 1.45; margin: 0; font-style: italic; }
+.cartouche .made { font-family: var(--font-caps); font-size: 12px; letter-spacing: .06em; color: #5c4630; margin-top: 6px; }
+.cartouche .made a { color: var(--rouge); text-decoration: none; border-bottom: 1px solid rgb(155 59 42 / .4); }
+.cartouche .made a:focus-visible { outline: 2px solid var(--rouge); outline-offset: 2px; }
 .cartouche .flourish { display: block; margin: 8px auto 0; width: 120px; height: 10px; }
 
 .tray {
@@ -71,6 +74,7 @@ body { background: var(--night); color: var(--parchment); font-family: var(--fon
 .tray .years span { font-family: var(--font-data); font-size: 12px; font-variant-numeric: tabular-nums; color: #8a6a43; transition: color .2s; }
 .tray .years span.on { color: var(--ink); }
 .tray .val { font-family: var(--font-data); font-size: 12px; font-variant-numeric: tabular-nums; min-width: 3.5ch; text-align: right; }
+.tray .source a { color: var(--rouge); text-decoration: none; border-bottom: 1px solid rgb(155 59 42 / .4); word-break: break-all; }
 .tray .source { font-size: 11.5px; line-height: 1.4; color: #5c4630; border-top: 1px solid rgb(138 106 67 / .5); padding-top: 8px; margin: 0; }
 
 .readout {
@@ -107,6 +111,7 @@ body { background: var(--night); color: var(--parchment); font-family: var(--fon
   <h1>Tegucigalpa, 1983–2026</h1>
   <p>The valley as the surveyors drew it, laid back onto the globe. Slide toward 2026 to watch the city grow, then see it from orbit.</p>
   <svg class="flourish" viewBox="0 0 120 10" aria-hidden="true"><path d="M2 5 H50 M70 5 H118" stroke="#8a6a43" stroke-width="1"/><path d="M60 1 L64 5 L60 9 L56 5 Z" fill="#9b3b2a"/></svg>
+  <div class="made">Made for the <a href="https://30daymapchallenge.com" target="_blank" rel="noopener">#30DayMapChallenge</a> 2026 · Yanira A. Rivera</div>
 </header>
 
 <section class="tray" aria-label="Map controls">
@@ -121,7 +126,7 @@ body { background: var(--night); color: var(--parchment); font-family: var(--fon
     <input id="year" type="range" min="0" max="200" value="0" step="1" aria-label="Time and view" aria-valuetext="1983 survey">
     <div class="ticks" aria-hidden="true"><span class="on">1983<br>survey</span><span>2026<br>map</span><span>2026<br>satellite</span></div>
   </div>
-  <p class="source">1983: Tegucigalpa and Lepaterique, 1:50,000 topographic series. Perry-Castañeda Library Map Collection, courtesy of the University of Texas Libraries, The University of Texas at Austin. Mosaic and georeferencing: Yanira A. Rivera.<br>2026 map: map data © OpenStreetMap contributors, SRTM; map style © OpenTopoMap (CC-BY-SA); captured 4 Nov 2026.<br>2026 satellite: contains modified Copernicus Sentinel data 2026, Sentinel-2 L2A true color, acquired 9 Feb 2026.<br>Coastlines and borders: Natural Earth.</p>
+  <p class="source">1983: Tegucigalpa and Lepaterique, 1:50,000 topographic series. Perry-Castañeda Library Map Collection, courtesy of the University of Texas Libraries, The University of Texas at Austin. Mosaic and georeferencing: Yanira A. Rivera.<br>2026 map: map data © OpenStreetMap contributors, SRTM; map style © OpenTopoMap (CC-BY-SA); captured 4 Nov 2026.<br>2026 satellite: contains modified Copernicus Sentinel data 2026, Sentinel-2 L2A true color, acquired 9 Feb 2026.<br>Coastlines and borders: Natural Earth.<br>Cite: Rivera, Y. A. (2026). SDG11-TGU-EVOLUTION. Zenodo. <a href="https://doi.org/10.5281/zenodo.23957998" target="_blank" rel="noopener">doi.org/10.5281/zenodo.23957998</a></p>
 </section>
 
 <div class="readout" id="readout" aria-live="off">14°05′ N · 87°13′ W</div>
@@ -132,6 +137,7 @@ body { background: var(--night); color: var(--parchment); font-family: var(--fon
   const TEGUS = [-87.2048, 14.0995];
   const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const abs = name => new URL(name, location.href).href;
+  const LAYERS = 'layers/', BASEMAP = 'basemap/';   // folders next to index.html
 
   // graticule every 15°, densified so it curves on the globe
   function graticule(step = 15) {
@@ -160,9 +166,9 @@ body { background: var(--night); color: var(--parchment); font-family: var(--fon
       projection: { type: 'globe' },
       sky: { 'atmosphere-blend': ['interpolate', ['linear'], ['zoom'], 0, 0.6, 5, 0.25, 7, 0] },
       sources: {
-        land: { type: 'geojson', data: abs('land50.geojson') },
-        borders: { type: 'geojson', data: abs('borders.geojson'), attribution: 'Natural Earth' },
-        honduras: { type: 'geojson', data: abs('honduras.geojson') },
+        land: { type: 'geojson', data: abs(BASEMAP + 'land50.geojson') },
+        borders: { type: 'geojson', data: abs(BASEMAP + 'borders.geojson'), attribution: 'Natural Earth' },
+        honduras: { type: 'geojson', data: abs(BASEMAP + 'honduras.geojson') },
         grat: { type: 'geojson', data: graticule() }
       },
       layers: [
@@ -185,10 +191,10 @@ body { background: var(--night); color: var(--parchment); font-family: var(--fon
 
   // three dated baselines, each tile pinned by its own corners: satellite at the bottom, the 2026 map above it, 1983 on top
   const ids = { s2_2026: [], osm2026: [], sheet: [] };
-  Promise.all(['s2_2026', 'osm2026', 'sheet'].map(n => fetch(abs(n + '.json')).then(r => r.json()).then(m => [n, m]))).then(sets => {
+  Promise.all(['s2_2026', 'osm2026', 'sheet'].map(n => fetch(abs(LAYERS + n + '.json')).then(r => r.json()).then(m => [n, m]))).then(sets => {
     const add = () => sets.forEach(([n, meta]) => meta.tiles.forEach((t, i) => {
       const id = n + i; ids[n].push(id);
-      map.addSource(id, { type: 'image', url: abs(t.file), coordinates: t.coordinates });
+      map.addSource(id, { type: 'image', url: abs(LAYERS + t.file), coordinates: t.coordinates });
       map.addLayer({ id, type: 'raster', source: id, paint: { 'raster-opacity': 1, 'raster-fade-duration': 0, 'raster-resampling': 'linear' } }, 'tropics');
     }));
     map.loaded() ? add() : map.once('load', add);
