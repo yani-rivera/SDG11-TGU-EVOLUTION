@@ -61,11 +61,11 @@
     ],
     [
      -87.25013947452209,
-     14.00049650231445
+     14.000496502314462
     ],
     [
      -87.50029909118959,
-     14.00049650231445
+     14.000496502314462
     ]
    ]
   },
@@ -82,54 +82,23 @@
     ],
     [
      -86.9999798578546,
-     14.00049650231445
+     14.000496502314462
     ],
     [
      -87.25013947452209,
-     14.00049650231445
+     14.000496502314462
     ]
    ]
   }
  ],
- "source_crs": "EPSG:4326",
  "provenance": {
-  "script": "sheet_to_globe",
-  "version": "0.4.0",
-  "python": "3.13.5",
-  "source_file": "../data/alltgu_rendered.tiff",
+  "script": "prep_sheet.py",
+  "version": "0.1.0",
   "source_sha256": "9a1cc7ea6e47376e1cbeabd3793b734d8b6d963ab570d9eab4f58100c56115ac",
-  "source_size_px": [
+  "source_size": [
    6000,
    4284
   ],
-  "config": {
-   "input": {
-    "geotiff": "../data/alltgu_rendered.tiff"
-   },
-   "source": {
-    "mosaic": true,
-    "sheets": [
-     "Tegucigalpa",
-     "Lepaterique (Hoja 2758 III G)"
-    ],
-    "origin": "Perry-Casta\u00f1eda Library Map Collection, University of Texas Libraries (public domain per PCL FAQ)",
-    "notes": "Two georeferenced sheets merged in QGIS into one mosaic before export; a seam is visible where they meet."
-   },
-   "output": {
-    "dir": "../layers",
-    "prefix": "sheet",
-    "format": "WEBP",
-    "quality": 82,
-    "max_tile_px": 4096
-   },
-   "collar": {
-    "white_threshold": 245,
-    "black_threshold": 5
-   },
-   "projection": {
-    "resample_rows_to_web_mercator": true
-   }
-  },
-  "created_utc": "2026-11-05T07:46:49+00:00"
+  "created_utc": "2026-11-04T14:59:48Z"
  }
 }
